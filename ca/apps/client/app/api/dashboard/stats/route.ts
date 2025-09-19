@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
     const stats = await prisma.complaint.groupBy({
       by: ["status"],
       where: {
-        createdBy: session.user.id,
+        citizenId: session.user.id, // Fixed: use citizenId instead of createdBy
       },
       _count: {
         status: true,

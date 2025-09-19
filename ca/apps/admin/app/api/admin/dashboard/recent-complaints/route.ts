@@ -16,7 +16,20 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
+    // Build where clause based on user role
+    let where: any = {};
+    if (session.user.role === "officer") {
+      where = {
+        assignments: {
+          some: {
+            officerId: session.user.id,
+          },
+        },
+      };
+    }
+
     const recentComplaints = await prisma.complaint.findMany({
+      where,
       select: {
         id: true,
         title: true,

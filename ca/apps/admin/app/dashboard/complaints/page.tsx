@@ -18,7 +18,8 @@ import {
   User, 
   MessageSquare,
   UserCheck,
-  AlertCircle
+  AlertCircle,
+  X
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -76,10 +77,24 @@ export default function AdminComplaintsPage() {
     priority: searchParams.get("priority") || "all",
     search: searchParams.get("search") || "",
   });
+  const [officers, setOfficers] = useState<any[]>([]);
+  const [assignModal, setAssignModal] = useState<{ isOpen: boolean; complaintId: string; title: string }>({
+    isOpen: false,
+    complaintId: "",
+    title: "",
+  });
+  const [selectedOfficer, setSelectedOfficer] = useState("");
+  const [isAssigning, setIsAssigning] = useState(false);
 
   useEffect(() => {
     fetchComplaints();
   }, [searchParams]);
+
+  useEffect(() => {
+    if (session?.user?.role === "admin") {
+      fetchOfficers();
+    }
+  }, [session]);
 
   const fetchComplaints = async () => {
     setIsLoading(true);
@@ -108,6 +123,78 @@ export default function AdminComplaintsPage() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const fetchOfficers = async () => {
+    try {
+      const response = await fetch("/api/admin/officers");
+      if (response.ok) {
+        const data = await response.json();
+        setOfficers(data.officers || []); // Now using the correct structure
+      }
+    } catch (error) {
+      console.error("Error fetching officers:", error);
+    }
+  };
+
+  const handleAssignComplaint = async () => {
+    console.log("Modal Assignment - Selected Officer:", selectedOfficer);
+    console.log("Modal Assignment - Complaint ID:", assignModal.complaintId);
+    console.log("Modal Assignment - Available Officers:", officers);
+    
+    if (!selectedOfficer) {
+      toast.error("Please select an officer");
+      return;
+    }
+
+    setIsAssigning(true);
+    try {
+      const assignmentData = {
+        complaintId: assignModal.complaintId,
+        officerId: selectedOfficer,
+        priority: "medium",
+      };
+      
+      console.log("Sending modal assignment data:", assignmentData);
+      
+      const response = await fetch("/api/admin/assignments", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(assignmentData),
+      });
+
+      console.log("Modal assignment response status:", response.status);
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log("Modal assignment successful:", result);
+        toast.success("Complaint assigned successfully");
+        setAssignModal({ isOpen: false, complaintId: "", title: "" });
+        setSelectedOfficer("");
+        fetchComplaints();
+      } else {
+        const errorData = await response.json();
+        console.error("Modal assignment failed:", errorData);
+        toast.error(errorData.error || "Failed to assign complaint");
+      }
+    } catch (error) {
+      console.error("Error assigning complaint:", error);
+      toast.error("Failed to assign complaint");
+    } finally {
+      setIsAssigning(false);
+    }
+  };
+
+  const openAssignModal = (complaintId: string, title: string) => {
+    setAssignModal({ isOpen: true, complaintId, title });
+    setSelectedOfficer("");
+  };
+
+  const closeAssignModal = () => {
+    setAssignModal({ isOpen: false, complaintId: "", title: "" });
+    setSelectedOfficer("");
   };
 
   const updateFilters = (newFilters: Partial<typeof filters>) => {
@@ -329,12 +416,14 @@ export default function AdminComplaintsPage() {
                     </p>
                   </div>
                   <div className="flex items-center gap-2 ml-4">
-                    {complaint.status === "pending" && session?.user?.role === "admin" && (
-                      <Button variant="outline" size="sm" asChild>
-                        <Link href={`/dashboard/complaints/${complaint.id}/assign`}>
-                          <UserCheck className="h-4 w-4 mr-2" />
-                          Assign
-                        </Link>
+                    {complaint.status === "pending" && session?.user?.role === "admin" && complaint.assignments.length === 0 && (
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => openAssignModal(complaint.id, complaint.title)}
+                      >
+                        <UserCheck className="h-4 w-4 mr-2" />
+                        Assign
                       </Button>
                     )}
                     <Button variant="outline" size="sm" asChild>
@@ -412,6 +501,63 @@ export default function AdminComplaintsPage() {
               </Button>
             );
           })}
+        </div>
+      )}
+
+      {/* Assignment Modal */}
+      {assignModal.isOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md mx-4">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                Assign Complaint
+              </h3>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={closeAssignModal}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            
+            <div className="mb-4">
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                Complaint: {assignModal.title}
+              </p>
+            </div>
+
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Select Officer
+              </label>
+              <Select value={selectedOfficer} onValueChange={setSelectedOfficer}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Choose an officer" />
+                </SelectTrigger>
+                <SelectContent>
+                  {officers.map((officer) => (
+                    <SelectItem key={officer.id} value={officer.id}>
+                      {officer.name} - {officer.department || "No Department"}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex justify-end gap-3">
+              <Button variant="outline" onClick={closeAssignModal}>
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleAssignComplaint}
+                disabled={!selectedOfficer || isAssigning}
+              >
+                {isAssigning ? "Assigning..." : "Assign"}
+              </Button>
+            </div>
+          </div>
         </div>
       )}
     </div>

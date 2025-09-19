@@ -40,6 +40,11 @@ interface Officer {
 export default function OfficersPage() {
   const { data: session } = useSession();
   const [officers, setOfficers] = useState<Officer[]>([]);
+  const [stats, setStats] = useState({
+    totalOfficers: 0,
+    activeOfficers: 0,
+    totalAssignments: 0
+  });
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [showAddForm, setShowAddForm] = useState(false);
@@ -67,7 +72,13 @@ export default function OfficersPage() {
       const response = await fetch("/api/admin/officers");
       if (response.ok) {
         const data = await response.json();
-        setOfficers(data.officers || []);
+        console.log("API Response:", data); // Debug log
+        setOfficers(data.officers || []); // Now using the correct structure
+        setStats(data.stats || {
+          totalOfficers: 0,
+          activeOfficers: 0,
+          totalAssignments: 0
+        });
       }
     } catch (error) {
       console.error("Error fetching officers:", error);
@@ -174,7 +185,7 @@ export default function OfficersPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Total Officers</p>
-                <p className="text-2xl font-bold">{officers.length}</p>
+                <p className="text-2xl font-bold">{stats.totalOfficers}</p>
               </div>
               <Users className="h-8 w-8 text-muted-foreground" />
             </div>
@@ -187,7 +198,7 @@ export default function OfficersPage() {
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Active</p>
                 <p className="text-2xl font-bold text-green-600">
-                  {officers.filter(o => o.isActive).length}
+                  {stats.activeOfficers}
                 </p>
               </div>
               <UserCheck className="h-8 w-8 text-green-600" />
@@ -201,7 +212,7 @@ export default function OfficersPage() {
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Admins</p>
                 <p className="text-2xl font-bold text-blue-600">
-                  {officers.filter(o => o.role === "admin").length}
+                  0
                 </p>
               </div>
               <Shield className="h-8 w-8 text-blue-600" />
@@ -215,7 +226,7 @@ export default function OfficersPage() {
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Total Assignments</p>
                 <p className="text-2xl font-bold">
-                  {officers.reduce((sum, o) => sum + o._count.assignments, 0)}
+                  {stats.totalAssignments}
                 </p>
               </div>
               <FileText className="h-8 w-8 text-muted-foreground" />

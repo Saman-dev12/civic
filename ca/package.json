@@ -1,6 +1,6 @@
 {
-  "name": "shadcn-ui-monorepo",
-  "version": "0.0.1",
+  "name": "civic-complaints-system",
+  "version": "1.0.0",
   "private": true,
   "workspaces": [
     "apps/*",
@@ -9,12 +9,19 @@
   "scripts": {
     "build": "turbo build",
     "dev": "turbo dev",
+    "dev:admin": "turbo dev --filter=admin",
+    "dev:client": "turbo dev --filter=client",
     "lint": "turbo lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "db:generate": "cd packages/db && npx prisma generate",
     "db:push": "cd packages/db && npx prisma db push",
     "db:migrate": "cd packages/db && npx prisma migrate dev",
-    "db:seed": "tsx scripts/seed-mock-data.ts"
+    "db:reset": "cd packages/db && npx prisma migrate reset",
+    "db:seed": "tsx scripts/seed-mock-data.ts",
+    "db:studio": "cd packages/db && npx prisma studio",
+    "setup": "npm install && npm run db:generate && npm run db:migrate && npm run db:seed",
+    "start": "turbo start",
+    "clean": "turbo clean && rm -rf node_modules"
   },
   "devDependencies": {
     "@types/minimatch": "^6.0.0",

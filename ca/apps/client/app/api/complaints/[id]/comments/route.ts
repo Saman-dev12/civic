@@ -10,8 +10,9 @@ const commentSchema = z.object({
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     const session = await getServerSession(authOptions);
 
@@ -25,8 +26,8 @@ export async function POST(
     // Verify the complaint exists and belongs to the user
     const complaint = await prisma.complaint.findFirst({
       where: {
-        id: params.id,
-        createdBy: session.user.id,
+        id: id,
+        citizenId: session.user.id,
       },
     });
 
@@ -41,11 +42,11 @@ export async function POST(
     const comment = await prisma.comment.create({
       data: {
         content,
-        complaintId: params.id,
-        authorId: session.user.id,
+        complaintId: id,
+        userId: session.user.id,
       },
       include: {
-        author: {
+        user: {
           select: {
             name: true,
             role: true,

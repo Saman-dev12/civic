@@ -26,6 +26,15 @@ export async function GET(request: NextRequest) {
 
     const where: any = {};
 
+    // If user is an officer, only show complaints assigned to them
+    if (session.user.role === "officer") {
+      where.assignments = {
+        some: {
+          officerId: session.user.id,
+        },
+      };
+    }
+
     if (status) {
       where.status = status;
     }

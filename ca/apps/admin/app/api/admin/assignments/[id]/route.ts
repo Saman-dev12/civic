@@ -5,8 +5,9 @@ import { prisma } from "@workspace/db";
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     const session = await getServerSession(authOptions);
     
@@ -17,7 +18,7 @@ export async function PUT(
       );
     }
 
-    const { id } = params;
+    // id is already extracted above
     const body = await request.json();
     const { status, notes, priority, dueDate } = body;
 

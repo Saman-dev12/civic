@@ -5,8 +5,9 @@ import { prisma } from "@workspace/db";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     const session = await getServerSession(authOptions);
 
@@ -16,8 +17,8 @@ export async function GET(
 
     const complaint = await prisma.complaint.findFirst({
       where: {
-        id: params.id,
-        createdBy: session.user.id,
+        id: id,
+        citizenId: session.user.id,
       },
       include: {
         user: {
@@ -48,7 +49,7 @@ export async function GET(
         },
         comments: {
           include: {
-            author: {
+            user: {
               select: {
                 name: true,
                 role: true,

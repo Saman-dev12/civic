@@ -77,14 +77,10 @@ export default function AssignmentsPage() {
 
   const fetchAssignments = async () => {
     try {
-      const endpoint = isAdmin 
-        ? "/api/admin/assignments" 
-        : "/api/admin/assignments?officer=me";
-      
-      const response = await fetch(endpoint);
+      const response = await fetch("/api/admin/assignments");
       if (response.ok) {
         const data = await response.json();
-        setAssignments(data.assignments || []);
+        setAssignments(data || []);
       }
     } catch (error) {
       console.error("Error fetching assignments:", error);

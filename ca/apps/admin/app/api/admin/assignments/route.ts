@@ -106,6 +106,47 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { complaintId, officerId, priority, dueDate, notes } = body;
 
+    console.log("Assignment creation request:", { complaintId, officerId, assignedBy: session.user.id, priority });
+
+    // Validate that the complaint exists
+    const complaint = await prisma.complaint.findUnique({
+      where: { id: complaintId }
+    });
+
+    if (!complaint) {
+      console.error("Complaint not found:", complaintId);
+      return NextResponse.json(
+        { error: "Complaint not found" },
+        { status: 404 }
+      );
+    }
+
+    // Validate that the officer exists
+    const officer = await prisma.user.findUnique({
+      where: { id: officerId, role: "officer" }
+    });
+
+    if (!officer) {
+      console.error("Officer not found:", officerId);
+      return NextResponse.json(
+        { error: "Officer not found" },
+        { status: 404 }
+      );
+    }
+
+    // Validate that the assigner (admin) exists
+    const assigner = await prisma.user.findUnique({
+      where: { id: session.user.id }
+    });
+
+    if (!assigner) {
+      console.error("Assigner not found:", session.user.id);
+      return NextResponse.json(
+        { error: "Assigner not found" },
+        { status: 404 }
+      );
+    }
+
     // Check if complaint is already assigned
     const existingAssignment = await prisma.assignment.findFirst({
       where: {
@@ -117,11 +158,22 @@ export async function POST(request: NextRequest) {
     });
 
     if (existingAssignment) {
+      console.log("Complaint already assigned:", existingAssignment);
       return NextResponse.json(
         { error: "Complaint is already assigned" },
         { status: 400 }
       );
     }
+
+    console.log("Creating assignment with data:", {
+      complaintId,
+      officerId,
+      assignedBy: session.user.id,
+      priority,
+      dueDate: dueDate ? new Date(dueDate) : null,
+      notes,
+      status: "assigned",
+    });
 
     const assignment = await prisma.assignment.create({
       data: {
@@ -149,6 +201,8 @@ export async function POST(request: NextRequest) {
         },
       },
     });
+
+    console.log("Assignment created successfully:", assignment.id);
 
     // Update complaint status
     await prisma.complaint.update({

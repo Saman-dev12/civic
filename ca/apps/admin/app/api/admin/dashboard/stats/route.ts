@@ -16,12 +16,25 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
+    // Build where clause for complaints based on user role
+    let complaintWhere: any = {};
+    if (session.user.role === "officer") {
+      complaintWhere = {
+        assignments: {
+          some: {
+            officerId: session.user.id,
+          },
+        },
+      };
+    }
+
     const [
       complaintStats,
       officerStats,
     ] = await Promise.all([
       prisma.complaint.groupBy({
         by: ["status"],
+        where: complaintWhere,
         _count: {
           status: true,
         },

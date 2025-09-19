@@ -38,6 +38,8 @@ export async function GET() {
       },
     });
 
+    console.log("Fetched officers:", officers);
+
     // Get assignment stats for each officer
     const officersWithStats = await Promise.all(
       officers.map(async (officer) => {
@@ -45,6 +47,7 @@ export async function GET() {
           where: { officerId: officer.id },
           select: { status: true },
         });
+      
 
         const stats = {
           total: assignments.length,
@@ -60,7 +63,16 @@ export async function GET() {
       })
     );
 
-    return NextResponse.json(officersWithStats);
+    return NextResponse.json({
+      officers: officersWithStats,
+      totalCount: officersWithStats.length,
+      activeCount: officersWithStats.filter(o => o.isActive).length,
+      stats: {
+        totalOfficers: officersWithStats.length,
+        activeOfficers: officersWithStats.filter(o => o.isActive).length,
+        totalAssignments: officersWithStats.reduce((sum, o) => sum + (o._count?.assignments || 0), 0)
+      }
+    });
   } catch (error) {
     console.error("Error fetching officers:", error);
     return NextResponse.json(

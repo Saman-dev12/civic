@@ -1,12 +1,38 @@
-# shadcn/ui monorepo template
+# Civic Complaints Management System
 
-This template is for creating a monorepo with shadcn/ui.
+A comprehensive monorepo for managing civic complaints with separate admin and citizen portals.
 
-## Usage
+## Quick Start
 
-```bash
-pnpm dlx shadcn@latest init
-```
+1. **Environment Setup**
+   ```bash
+   cp .env.example .env
+   # Edit .env with your configuration (see ENV_SETUP.md for details)
+   ```
+
+2. **Install Dependencies**
+   ```bash
+   npm install
+   ```
+
+3. **Database Setup**
+   ```bash
+   cd packages/db
+   npx prisma migrate dev
+   npx prisma generate
+   ```
+
+4. **Start Development**
+   ```bash
+   npm run dev
+   ```
+
+## Documentation
+
+- [Environment Setup Guide](./ENV_SETUP.md) - Detailed environment variables configuration
+- [Role Definitions](./ROLE_DEFINITIONS.md) - User roles and permissions
+- [Setup Guide](./SETUP_GUIDE.md) - Comprehensive setup instructions
+- [Completion Summary](./COMPLETION_SUMMARY.md) - Feature implementation status
 
 ## Adding components
 

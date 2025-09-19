@@ -3,10 +3,12 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "../../../../../lib/auth";
 import { prisma } from "@workspace/db";
 
-export async function PUT(
+export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
+  
   try {
     const session = await getServerSession(authOptions);
     
@@ -17,31 +19,23 @@ export async function PUT(
       );
     }
 
-    const { id } = params;
-    const body = await request.json();
-    const { isActive, department, phone } = body;
-
-    const officer = await prisma.user.update({
-      where: { id },
-      data: {
-        isActive,
-        department,
-        phone,
-      },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        department: true,
-        isActive: true,
-        phone: true,
-        createdAt: true,
+    const officer = await prisma.user.findUnique({
+      where: {
+        id: id,
+        role: { in: ["officer", "admin"] },
       },
     });
 
+    if (!officer) {
+      return NextResponse.json(
+        { error: "Officer not found" },
+        { status: 404 }
+      );
+    }
+
     return NextResponse.json(officer);
   } catch (error) {
-    console.error("Error updating officer:", error);
+    console.error("Error fetching officer:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
@@ -49,10 +43,12 @@ export async function PUT(
   }
 }
 
-export async function DELETE(
+export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
+  
   try {
     const session = await getServerSession(authOptions);
     
@@ -63,17 +59,24 @@ export async function DELETE(
       );
     }
 
-    const { id } = params;
+    const body = await request.json();
+    const { name, email, phone, department, employeeId, isActive } = body;
 
-    // Instead of deleting, deactivate the officer
     await prisma.user.update({
-      where: { id },
-      data: { isActive: false },
+      where: { id: id },
+      data: {
+        name,
+        email,
+        phone,
+        department,
+        employeeId,
+        isActive,
+      },
     });
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Error deactivating officer:", error);
+    console.error("Error updating officer:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

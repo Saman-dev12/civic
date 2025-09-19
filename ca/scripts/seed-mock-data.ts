@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { prisma } from "@workspace/db";
+import { prisma } from "../packages/db";
 import bcrypt from "bcryptjs";
 
 const CATEGORIES = [
@@ -220,7 +220,7 @@ async function createMockComplaints(users: { admin: any, officers: any[], citize
   return complaints;
 }
 
-async function createMockAssignments(complaints: any[], officers: any[]) {
+async function createMockAssignments(complaints: any[], officers: any[], admin: any) {
   console.log("👮 Creating mock assignments...");
   
   let assignmentCount = 0;
@@ -245,10 +245,11 @@ async function createMockAssignments(complaints: any[], officers: any[]) {
       data: {
         complaintId: complaint.id,
         officerId: officer.id,
+        assignedBy: admin.id, // Admin assigns complaints
         assignedAt: new Date(complaint.createdAt.getTime() + Math.random() * 86400000),
         priority: complaint.priority,
         dueDate: new Date(Date.now() + Math.random() * 7 * 24 * 60 * 60 * 1000), // Random due date within a week
-        status: ["assigned", "in_progress", "completed"][Math.floor(Math.random() * 3)],
+        status: ["assigned", "in_progress", "completed"][Math.floor(Math.random() * 3)] as any,
         notes: `Assigned to ${officer.department} department. Please handle according to priority level.`,
       },
     });
@@ -275,7 +276,7 @@ async function main() {
     // Create mock data
     const users = await createMockUsers();
     const complaints = await createMockComplaints(users);
-    await createMockAssignments(complaints, users.officers);
+    await createMockAssignments(complaints, users.officers, users.admin);
     
     console.log("=" .repeat(50));
     console.log("🎉 Mock data seeding completed successfully!");

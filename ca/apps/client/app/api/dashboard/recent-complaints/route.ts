@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
 
     const recentComplaints = await prisma.complaint.findMany({
       where: {
-        createdBy: session.user.id,
+        citizenId: session.user.id, // Fixed: use citizenId instead of createdBy
       },
       select: {
         id: true,

@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
         priority: validatedData.priority,
         location: validatedData.location,
         imageUrl,
-        createdBy: session.user.id,
+        citizenId: session.user.id, // Fixed: use citizenId instead of createdBy
       },
       include: {
         user: {
@@ -111,7 +111,7 @@ export async function GET(request: NextRequest) {
     const category = searchParams.get("category");
 
     const where: any = {
-      createdBy: session.user.id,
+      citizenId: session.user.id, // Fixed: use citizenId instead of createdBy
     };
 
     if (status) {
