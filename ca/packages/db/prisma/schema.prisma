@@ -1,0 +1,109 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id         String   @id @default(uuid())
+  name       String
+  email      String   @unique
+  password   String
+  phone      String?
+  role       Role
+  department String?
+  employeeId String?
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  complaints Complaint[] @relation("UserComplaints")
+  assignments Assignment[] @relation("OfficerAssignments")
+  assignedAssignments Assignment[] @relation("AssignedByAssignments")
+  comments   Comment[]
+}
+
+model Complaint {
+  id          String     @id @default(uuid())
+  title       String
+  description String?
+  category    Category   @default(others)
+  priority    Priority   @default(medium)
+  location    String?
+  latitude    Float?
+  longitude   Float?
+  imageUrl    String?
+  status      Status     @default(pending)
+  createdBy   String
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  user        User       @relation("UserComplaints", fields: [createdBy], references: [id], onDelete: Cascade)
+  assignments Assignment[]
+  comments    Comment[]
+}
+
+model Comment {
+  id          String     @id @default(uuid())
+  content     String
+  complaintId String
+  authorId    String
+  createdAt   DateTime   @default(now())
+
+  complaint   Complaint  @relation(fields: [complaintId], references: [id], onDelete: Cascade)
+  author      User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
+}
+
+model Assignment {
+  id          String   @id @default(uuid())
+  complaintId String
+  officerId   String
+  assignedBy  String
+  assignedAt  DateTime @default(now())
+
+  complaint   Complaint @relation(fields: [complaintId], references: [id], onDelete: Cascade)
+  officer     User      @relation("OfficerAssignments", fields: [officerId], references: [id], onDelete: Cascade)
+  assigner    User      @relation("AssignedByAssignments", fields: [assignedBy], references: [id], onDelete: Cascade)
+}
+
+enum Role {
+  citizen
+  admin
+  officer
+}
+
+enum Status {
+  pending
+  assigned
+  in_progress
+  resolved
+  closed
+}
+
+enum Priority {
+  low
+  medium
+  high
+  critical
+}
+
+enum Category {
+  roads
+  streetlight
+  sanitation
+  water
+  tree
+  electricity
+  drainage
+  others
+}
