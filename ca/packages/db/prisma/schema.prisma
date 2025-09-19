@@ -40,15 +40,19 @@ model Complaint {
   category    Category   @default(others)
   priority    Priority   @default(medium)
   location    String?
+  area        String?
+  landmark    String?
+  address     String?
   latitude    Float?
   longitude   Float?
   imageUrl    String?
+  images      String[]   @default([])
   status      Status     @default(pending)
-  createdBy   String
+  citizenId   String
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
 
-  user        User       @relation("UserComplaints", fields: [createdBy], references: [id], onDelete: Cascade)
+  user        User       @relation("UserComplaints", fields: [citizenId], references: [id], onDelete: Cascade)
   assignments Assignment[]
   comments    Comment[]
 }
@@ -57,19 +61,23 @@ model Comment {
   id          String     @id @default(uuid())
   content     String
   complaintId String
-  authorId    String
+  userId      String
   createdAt   DateTime   @default(now())
 
   complaint   Complaint  @relation(fields: [complaintId], references: [id], onDelete: Cascade)
-  author      User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Assignment {
-  id          String   @id @default(uuid())
+  id          String         @id @default(uuid())
   complaintId String
   officerId   String
   assignedBy  String
-  assignedAt  DateTime @default(now())
+  assignedAt  DateTime       @default(now())
+  priority    Priority       @default(medium)
+  status      AssignmentStatus @default(assigned)
+  dueDate     DateTime?
+  notes       String?
 
   complaint   Complaint @relation(fields: [complaintId], references: [id], onDelete: Cascade)
   officer     User      @relation("OfficerAssignments", fields: [officerId], references: [id], onDelete: Cascade)
@@ -106,4 +114,11 @@ enum Category {
   electricity
   drainage
   others
+}
+
+enum AssignmentStatus {
+  assigned
+  in_progress
+  completed
+  on_hold
 }
